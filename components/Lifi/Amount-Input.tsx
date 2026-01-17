@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Image } from 'react-native';
 import { Token } from '@/types/token';
 import { useState } from 'react';
 
@@ -9,6 +9,7 @@ interface AmountInputProps {
 }
 
 export function AmountInput({ token, amount, onChangeAmount }: AmountInputProps) {
+  const [imageError, setImageError] = useState(false);
   const usdValue = parseFloat(amount || '0') * token.priceUSD;
 
   const handleChangeText = (text: string) => {
@@ -23,7 +24,17 @@ export function AmountInput({ token, amount, onChangeAmount }: AmountInputProps)
       <View style={styles.inputContainer}>
         <View style={styles.tokenInfo}>
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>{token.icon}</Text>
+            {!imageError && token.logoURI ? (
+              <Image
+                source={{ uri: token.logoURI }}
+                style={styles.tokenImage}
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <View style={styles.placeholderIcon}>
+                <Text style={styles.placeholderText}>{token.symbol.charAt(0)}</Text>
+              </View>
+            )}
             <View style={styles.statusDot} />
           </View>
           <View style={styles.amountContainer}>
@@ -75,9 +86,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    overflow: 'hidden',
   },
-  icon: {
-    fontSize: 20,
+  tokenImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  placeholderIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#3a3a3a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#888',
   },
   statusDot: {
     position: 'absolute',

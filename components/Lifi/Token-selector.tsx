@@ -9,6 +9,7 @@ import {
   TextInput,
   useWindowDimensions,
   Platform,
+  Image,
 } from 'react-native';
 import { Token } from '@/types/token';
 import { ChevronDown, X, Search, ArrowLeft } from 'lucide-react-native';
@@ -48,6 +49,7 @@ export function TokenSelector({
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNetwork, setSelectedNetwork] = useState('all');
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const { width } = useWindowDimensions();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -120,7 +122,17 @@ export function TokenSelector({
           activeOpacity={0.7}>
           <View style={styles.tokenInfo}>
             <View style={styles.iconContainer}>
-              <Text style={styles.icon}>{selectedToken.icon}</Text>
+              {!imageErrors.has(selectedToken.id) && selectedToken.logoURI ? (
+                <Image
+                  source={{ uri: selectedToken.logoURI }}
+                  style={styles.tokenImage}
+                  onError={() => setImageErrors(prev => new Set(prev).add(selectedToken.id))}
+                />
+              ) : (
+                <View style={styles.placeholderIcon}>
+                  <Text style={styles.placeholderText}>{selectedToken.symbol.charAt(0)}</Text>
+                </View>
+              )}
               <View style={styles.statusDot} />
             </View>
             <View style={styles.textContainer}>
@@ -196,7 +208,19 @@ export function TokenSelector({
                       activeOpacity={0.7}>
                       <View style={styles.tokenItemLeft}>
                         <View style={styles.tokenItemIconContainer}>
-                          <Text style={styles.tokenItemIcon}>{item.icon}</Text>
+                          {!imageErrors.has(item.id) && item.logoURI ? (
+                            <Image
+                              source={{ uri: item.logoURI }}
+                              style={styles.tokenItemImage}
+                              onError={() => setImageErrors(prev => new Set(prev).add(item.id))}
+                            />
+                          ) : (
+                            <View style={styles.tokenItemPlaceholder}>
+                              <Text style={styles.tokenItemPlaceholderText}>
+                                {item.symbol.charAt(0)}
+                              </Text>
+                            </View>
+                          )}
                         </View>
                         <View style={styles.tokenItemTextContainer}>
                           <Text style={styles.tokenItemName}>{item.symbol}</Text>
@@ -288,9 +312,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    overflow: 'hidden',
   },
-  icon: {
-    fontSize: 20,
+  tokenImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  placeholderIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#3a3a3a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#888',
   },
   statusDot: {
     position: 'absolute',
@@ -451,9 +491,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a1a',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  tokenItemIcon: {
-    fontSize: 24,
+  tokenItemImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  tokenItemPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#2a2a2a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tokenItemPlaceholderText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#888',
   },
   tokenItemTextContainer: {
     gap: 4,

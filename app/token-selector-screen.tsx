@@ -8,12 +8,14 @@ import {
     Platform,
     ScrollView,
     Modal,
+    Image,
+    ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Search, ArrowLeft, ChevronDown, X } from 'lucide-react-native';
+import { Search, ArrowLeft, ChevronDown, X, RefreshCw } from 'lucide-react-native';
 import { useState, useMemo } from 'react';
 import { Token } from '@/types/token';
-import { MOCK_TOKENS } from '@/data/mockToken';
+import { useTokens } from '@/hooks/useTokens';
 import { notifyTokenSelection } from '@/lib/tokenSelectionEvent';
 
 // Define available networks
@@ -35,6 +37,7 @@ const NETWORKS = [
 
 export default function TokenSelectorScreen() {
     const router = useRouter();
+    const { tokens, loading, error, refresh } = useTokens();
     const params = useLocalSearchParams<{
         mode?: string;
         currentTokenId?: string;
@@ -45,14 +48,15 @@ export default function TokenSelectorScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedNetwork, setSelectedNetwork] = useState('all');
     const [showNetworks, setShowNetworks] = useState(false);
+    const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
     const mode = params.mode || 'from';
     const excludeTokenId = params.excludeTokenId;
 
     // Filter available tokens
     const availableTokens = useMemo(() => {
-        return MOCK_TOKENS.filter((token) => token.id !== excludeTokenId);
-    }, [excludeTokenId]);
+        return tokens.filter((token) => token.id !== excludeTokenId);
+    }, [tokens, excludeTokenId]);
 
     // Filter tokens based on search query and selected network
     const filteredTokens = useMemo(() => {
@@ -164,33 +168,68 @@ export default function TokenSelectorScreen() {
             </Modal>
 
             {/* Token List */}
-            <FlatList
-                data={filteredTokens}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.tokenListContent}
-                renderItem={({ item }) => (
+            {loading && (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#5b7aff" />
+                    <Text style={styles.loadingText}>Loading tokens...</Text>
+                </View>
+            )}
+
+            {error && !loading && (
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorTitle}>Failed to load tokens</Text>
+                    <Text style={styles.errorMessage}>{error}</Text>
                     <TouchableOpacity
-                        style={styles.tokenItem}
-                        onPress={() => handleSelectToken(item)}
-                        activeOpacity={0.7}>
-                        <View style={styles.tokenItemLeft}>
-                            <View style={styles.tokenItemIconContainer}>
-                                <Text style={styles.tokenItemIcon}>{item.icon}</Text>
-                            </View>
-                            <View style={styles.tokenItemTextContainer}>
-                                <Text style={styles.tokenItemName}>{item.symbol}</Text>
-                                <Text style={styles.tokenItemNetwork}>{item.network}</Text>
-                            </View>
-                        </View>
+                        style={styles.retryButton}
+                        onPress={refresh}
+                        activeOpacity={0.8}>
+                        <RefreshCw size={18} color="#fff" />
+                        <Text style={styles.retryButtonText}>Retry</Text>
                     </TouchableOpacity>
-                )}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>No tokens found</Text>
-                    </View>
-                }
-            />
+                </View>
+            )}
+
+            {!loading && !error && (
+                <FlatList
+                    data={filteredTokens}
+                    keyExtractor={(item) => item.id}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.tokenListContent}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={styles.tokenItem}
+                            onPress={() => handleSelectToken(item)}
+                            activeOpacity={0.7}>
+                            <View style={styles.tokenItemLeft}>
+                                <View style={styles.tokenItemIconContainer}>
+                                    {!imageErrors.has(item.id) && item.logoURI ? (
+                                        <Image
+                                            source={{ uri: item.logoURI }}
+                                            style={styles.tokenItemImage}
+                                            onError={() => setImageErrors(prev => new Set(prev).add(item.id))}
+                                        />
+                                    ) : (
+                                        <View style={styles.tokenItemPlaceholder}>
+                                            <Text style={styles.tokenItemPlaceholderText}>
+                                                {item.symbol.charAt(0)}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+                                <View style={styles.tokenItemTextContainer}>
+                                    <Text style={styles.tokenItemName}>{item.symbol}</Text>
+                                    <Text style={styles.tokenItemNetwork}>{item.network}</Text>
+                                </View>
+                            </View>
+                        </TouchableOpacity>
+                    )}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>No tokens found</Text>
+                        </View>
+                    }
+                />
+            )}
         </View>
     );
 }
@@ -343,9 +382,25 @@ const styles = StyleSheet.create({
         backgroundColor: '#1a1a1a',
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
     },
-    tokenItemIcon: {
-        fontSize: 24,
+    tokenItemImage: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+    },
+    tokenItemPlaceholder: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#2a2a2a',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tokenItemPlaceholderText: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#888',
     },
     tokenItemTextContainer: {
         gap: 4,
@@ -367,5 +422,49 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 15,
         color: '#666',
+    },
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 60,
+        gap: 16,
+    },
+    loadingText: {
+        fontSize: 14,
+        color: '#888',
+    },
+    errorContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 40,
+        gap: 12,
+    },
+    errorTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#ff6b6b',
+    },
+    errorMessage: {
+        fontSize: 14,
+        color: '#888',
+        textAlign: 'center',
+    },
+    retryButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#5b7aff',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 12,
+        marginTop: 8,
+    },
+    retryButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#fff',
     },
 });
