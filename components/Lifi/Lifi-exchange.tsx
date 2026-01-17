@@ -7,11 +7,12 @@ import {
   Alert,
 } from 'react-native';
 import { Settings, Wallet, ArrowRight } from 'lucide-react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TokenSelector } from './Token-selector';
 import { AmountInput } from './Amount-Input';
 import { MOCK_TOKENS } from '@/data/mockToken';
 import { Token } from '@/types/token';
+import { setTokenSelectionCallback, clearTokenSelectionCallback } from '@/lib/tokenSelectionEvent';
 
 export function ExchangeCard() {
   const [fromToken, setFromToken] = useState<Token>(MOCK_TOKENS[0]);
@@ -40,6 +41,21 @@ export function ExchangeCard() {
       `Exchanging ${amount} ${fromToken.symbol} to ${toToken.symbol}`
     );
   };
+
+  // Listen for token selection events from the mobile screen
+  useEffect(() => {
+    setTokenSelectionCallback((token: Token, mode: string) => {
+      if (mode === 'from') {
+        setFromToken(token);
+      } else if (mode === 'to') {
+        setToToken(token);
+      }
+    });
+
+    return () => {
+      clearTokenSelectionCallback();
+    };
+  }, []);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>

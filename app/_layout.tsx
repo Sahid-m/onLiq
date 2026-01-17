@@ -40,6 +40,14 @@ export default function RootLayout() {
               name="modal"
               options={{ presentation: 'modal', title: 'Modal' }}
             />
+            <Stack.Screen
+              name="token-selector-screen"
+              options={{
+                presentation: 'card',
+                headerShown: false,
+                animation: 'slide_from_right',
+              }}
+            />
           </Stack>
           <StatusBar
             backgroundColor={colors.background}
