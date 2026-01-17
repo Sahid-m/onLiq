@@ -1,125 +1,60 @@
-# Welcome to your Expo Themes Starter Kit template with NativeWind (Tailwind CSS) 🎨
+# OnLiq
 
-<div align="center">
-  <video 
-    src="https://github.com/user-attachments/assets/d5ba3caf-446c-4982-8d9e-a4476ce31987" 
-    width="300" 
-    controls 
-    autoplay 
-    loop 
-    muted 
-    playsinline
-  ></video>
-</div>
+**One-tap onboarding into Hyperliquid. Trade instantly with Pear.**
 
-> A powerful Expo template to kickstart your Expo projects with pre-configured themes and styling engines, using `Nativewind` (Tailwind CSS for mobile). Skip the boilerplate and start building immediately with a clean, organized architecture, featuring a `Shadcn` and `Tweakcn`-inspired theme system for NativeWind.
+OnLiq is a mobile-first onboarding app built with **React Native + Expo** that bridges users from any chain into **HyperEVM** using **LI.FI**, then optionally auto-deposits funds into **Hyperliquid** so they can start trading immediately via **Pear**.
 
-This template package is part of the [create-expo-themes](https://www.npmjs.com/package/create-expo-themes) CLI tool
+---
 
-## How to get started with this template
+## 🚀 What OnLiq Does
 
-1. Initialize your project:
+- 📱 **Mobile-first onboarding** (iOS & Android)
+- 🌉 **Swap + bridge in one tap** using LI.FI routing
+- 📊 **Full execution visibility**: quote, ETA, steps, progress, final amount
+- ⚡ **Auto-deposit to Hyperliquid**
+- 🍐 **Instant trading via Pear** (pair & basket trades)
 
-   ```bash
-   npx create-expo-themes@latest
-   ```
+---
 
-2. Select the second option: `NativeWind (Tailwind CSS)`
+## 🧠 Why OnLiq
 
-3. Start the app:
+Onboarding into Hyperliquid today requires multiple steps:
+bridge → wait → switch network → deposit → trade.
 
-   ```bash
-   npx expo start
-   ```
+OnLiq compresses this into **one clean mobile flow**.
 
-## Nativewind implementation.
+No chain juggling. No manual deposits.
 
-- Nativewind is implemented in this template as per the steps and guide outlined in the [Official Nativewind documentation](https://www.nativewind.dev/docs/getting-started/installation)
+---
 
-## The sweet part✨- Shadcn and Tweakcn-Inspired Theming
+## 🧩 Tech Stack
 
-- This template features a unique tailwind.config.js implementation that allows you to use semantic classes (like `bg-primary`, `text-foreground`, or `border-border`) that automatically switch colors when Dark Mode is toggled, which solves one of the biggest pain points in NativeWind: maintaining a consistent semantic color palette across light and dark modes without cluttering your code with `dark:text-xyz` everywhere.
+- **Framework**: React Native + Expo
+- **Routing & Bridging**: LI.FI SDK / API
+- **Destination Chain**: HyperEVM
+- **Trading**: Hyperliquid + Pear Execution API
+- **Wallets**: WalletConnect / embedded wallets (EVM)
 
-### How it works:
+---
 
-- In your `tailwind.config.js` file, I've defined a semantic color palette for both light and dark modes. A custom internal plugin handles the heavy lifting, so you don't have to manually write `dark:` variants for every single component.
+## 🔁 User Flow
 
-### Example usage
+1. User selects:
+   - Origin chain & token  
+   - Destination asset on HyperEVM (USDC, HYPE, etc.)
+2. OnLiq fetches the optimal route via LI.FI
+3. User confirms → swap + bridge executes
+4. Funds arrive on HyperEVM
+5. (Optional) Auto-deposit into Hyperliquid
+6. User trades instantly via Pear
 
-```typescript
-// This View will automatically have a light-gray background in Light Mode and a deep-charcoal background in Dark Mode!
-<View className="bg-card p-4 border-border border">
-  <Text className="text-card-foreground font-bold">
-    Dynamic Themed Card
-  </Text>
-</View>
-```
+---
 
-### Customizing your Palette:
+## ✨ Extra Features
 
-- Open `tailwind.config.js` and modify the colors object. You can change the hex codes for `primary`, `accent`, `destructive`, etc., and the changes will reflect globally across your app immediately.
+- Reusable **“Deposit to Hyperliquid”** mobile component
+- Clear execution states and progress indicators
+- Failure handling, retries, and user guidance
+- Designed for reuse by other Hyperliquid mobile apps
 
-## Theme implementation logic
 
-The theme management is located in lib/useColorScheme.tsx and follows a modern, persistent state pattern:
-
-- Zustand Store: Acts as the single source of truth for the colorScheme state across the entire app. It handles three states: light, dark, or system.
-
-- Persistent Storage: Using @react-native-async-storage/async-storage, the user's preference is saved locally. This ensures that if a user manually selects "Dark Mode," the app remains in Dark Mode even after being fully closed and reopened.
-
-- Smart Hook (useColorScheme): * On app launch, it triggers loadColorScheme to hydrate the state from storage.
-
-   - If the state is set to system, it automatically falls back to the device's native color preference using React Native's built-in useColorScheme.
-
-   - If a specific preference is stored (light or dark), it overrides the system setting.
-
-## How to use the theme-toggle components in desired pages
-
-- The toggle components are located in `components/ThemeToggle.tsx`
-
-- You have 4 custom toggling components to choose from:
-
-```typescript
-// Simple animated button
-<AnimatedThemeToggle/>
-
-// Full theme selector
-<ThemeToggle/>
-
-// Custom size button
-<ThemeToggleButton size={28}/>
-
-// Custom switch button from react native switch component
-<ThemeSwitchToggle/>
-```
-
-- You then simply import your desired component and use it, for example:
-
-```typescript
-import { AnimatedThemeToggle } from '@/components/ThemeToggle';
-```
-
-## Other core Expo configurations from the original Expo docs:
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
