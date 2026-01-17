@@ -1,0 +1,58 @@
+import { Token } from '@/types/token';
+
+export const MOCK_TOKENS: Token[] = [
+  {
+    id: '1',
+    name: 'JEFF',
+    symbol: 'JEFF',
+    network: 'Hyperliquid',
+    icon: '👤',
+    balance: 1250.5,
+    priceUSD: 0.0,
+  },
+  {
+    id: '2',
+    name: 'WBTC',
+    symbol: 'WBTC',
+    network: 'Sei',
+    icon: '₿',
+    balance: 0.5,
+    priceUSD: 42000.0,
+  },
+  {
+    id: '3',
+    name: 'Ethereum',
+    symbol: 'ETH',
+    network: 'Ethereum',
+    icon: '⟠',
+    balance: 2.5,
+    priceUSD: 2300.0,
+  },
+  {
+    id: '4',
+    name: 'USD Coin',
+    symbol: 'USDC',
+    network: 'Ethereum',
+    icon: '💵',
+    balance: 10000.0,
+    priceUSD: 1.0,
+  },
+  {
+    id: '5',
+    name: 'Solana',
+    symbol: 'SOL',
+    network: 'Solana',
+    icon: '◎',
+    balance: 150.0,
+    priceUSD: 98.0,
+  },
+  {
+    id: '6',
+    name: 'Polygon',
+    symbol: 'MATIC',
+    network: 'Polygon',
+    icon: '⬡',
+    balance: 5000.0,
+    priceUSD: 0.85,
+  },
+];
