@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, TextInput, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity } from 'react-native';
 import { Token } from '@/types/token';
 import { useState } from 'react';
+import { DollarSign } from 'lucide-react-native';
 
 interface AmountInputProps {
   token: Token;
@@ -10,17 +11,46 @@ interface AmountInputProps {
 
 export function AmountInput({ token, amount, onChangeAmount }: AmountInputProps) {
   const [imageError, setImageError] = useState(false);
+  const [inputMode, setInputMode] = useState<'token' | 'usd'>('token');
+
   const usdValue = parseFloat(amount || '0') * token.priceUSD;
+  const tokenValue = parseFloat(amount || '0') / token.priceUSD;
 
   const handleChangeText = (text: string) => {
     const filtered = text.replace(/[^0-9.]/g, '');
     if (filtered.split('.').length > 2) return;
-    onChangeAmount(filtered);
+
+    if (inputMode === 'usd') {
+      // Convert USD to token amount
+      const tokenAmount = parseFloat(filtered || '0') / token.priceUSD;
+      onChangeAmount(tokenAmount.toString());
+    } else {
+      onChangeAmount(filtered);
+    }
+  };
+
+  const displayValue = inputMode === 'usd'
+    ? usdValue.toFixed(2)
+    : amount;
+
+  const toggleInputMode = () => {
+    setInputMode(prev => prev === 'token' ? 'usd' : 'token');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Send</Text>
+      <View style={styles.labelRow}>
+        <Text style={styles.label}>Send</Text>
+        <TouchableOpacity
+          style={styles.toggleButton}
+          onPress={toggleInputMode}
+          activeOpacity={0.7}>
+          <DollarSign size={14} color={inputMode === 'usd' ? '#00ff88' : '#888'} />
+          <Text style={[styles.toggleText, inputMode === 'usd' && styles.toggleTextActive]}>
+            {inputMode === 'usd' ? 'USD' : token.symbol}
+          </Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.inputContainer}>
         <View style={styles.tokenInfo}>
           <View style={styles.iconContainer}>
@@ -40,14 +70,17 @@ export function AmountInput({ token, amount, onChangeAmount }: AmountInputProps)
           <View style={styles.amountContainer}>
             <TextInput
               style={styles.input}
-              value={amount}
+              value={displayValue}
               onChangeText={handleChangeText}
               placeholder="0"
               placeholderTextColor="#444"
               keyboardType="decimal-pad"
             />
             <Text style={styles.usdValue}>
-              ${usdValue.toFixed(2)} {token.symbol}
+              {inputMode === 'usd'
+                ? `≈ ${parseFloat(amount || '0').toFixed(6)} ${token.symbol}`
+                : `≈ $${usdValue.toFixed(2)}`
+              }
             </Text>
           </View>
         </View>
@@ -60,18 +93,47 @@ const styles = StyleSheet.create({
   container: {
     marginTop: 20,
   },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   label: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 12,
+  },
+  toggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#1a1a1a',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+  },
+  toggleText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#888',
+  },
+  toggleTextActive: {
+    color: '#00ff88',
   },
   inputContainer: {
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: 'rgba(91, 122, 255, 0.3)',
+    shadowColor: '#5b7aff',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
   tokenInfo: {
     flexDirection: 'row',
@@ -79,30 +141,32 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#2a2a2a',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(91, 122, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
     overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(91, 122, 255, 0.2)',
   },
   tokenImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   placeholderIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#3a3a3a',
     alignItems: 'center',
     justifyContent: 'center',
   },
   placeholderText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     color: '#888',
   },
@@ -122,13 +186,13 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   input: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: '#fff',
     padding: 0,
   },
   usdValue: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888',
   },
 });

@@ -105,6 +105,9 @@ export async function fetchTokens(useCache: boolean = true): Promise<Token[]> {
 
         // Flatten the chain-grouped response into a single array
         const tokens: Token[] = [];
+        const chainIds = Object.keys(tokensData);
+        console.log('Chain IDs in response:', chainIds.slice(0, 20)); // Log first 20 chain IDs
+
         for (const chainId in tokensData) {
             const chainTokens = tokensData[chainId];
             if (Array.isArray(chainTokens)) {
@@ -115,6 +118,10 @@ export async function fetchTokens(useCache: boolean = true): Promise<Token[]> {
         }
 
         console.log(`Fetched ${tokens.length} tokens from LiFi API`);
+
+        // Log sample of networks
+        const networks = new Set(tokens.map(t => t.network));
+        console.log('Networks found:', Array.from(networks));
 
         // Save to cache
         await saveTokensToCache(tokens);

@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { TokenSelector } from './Token-selector';
 import { AmountInput } from './Amount-Input';
 import { QuotePreview } from './Quote-Preview';
+import { SettingsModal } from './Settings-Modal';
 import { useTokens } from '@/hooks/useTokens';
 import { Token } from '@/types/token';
 import { setTokenSelectionCallback, clearTokenSelectionCallback } from '@/lib/tokenSelectionEvent';
@@ -28,6 +29,8 @@ export function ExchangeCard() {
   const [quote, setQuote] = useState<any>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [slippage, setSlippage] = useState(0.5); // Default 0.5%
 
   // Initialize tokens when data is loaded
   useEffect(() => {
@@ -58,8 +61,8 @@ export function ExchangeCard() {
           toToken: toToken.address,
           fromAmount: amountInSmallestUnit,
           // TODO: Add actual wallet addresses when wallet is connected
-          // fromAddress: walletAddress,
-          // toAddress: walletAddress,
+          fromAddress: "0x63ef147426D1a29808F1A5a47077488673A9282f",
+          toAddress: "0x63ef147426D1a29808F1A5a47077488673A9282f",
         });
 
         setQuote(quoteData);
@@ -82,6 +85,12 @@ export function ExchangeCard() {
     Alert.alert('Wallet Connected', 'Your wallet has been connected successfully!');
   };
 
+  const handleDisconnectWallet = () => {
+    setIsWalletConnected(false);
+    setQuote(null);
+    Alert.alert('Wallet Disconnected', 'Your wallet has been disconnected');
+  };
+
   const handleSwapTokens = () => {
     if (!fromToken || !toToken) return;
     const temp = fromToken;
@@ -96,12 +105,6 @@ export function ExchangeCard() {
     }
     if (!fromToken || !toToken) {
       Alert.alert('Error', 'Please select tokens to exchange');
-      return;
-    }
-
-    // If quote is available and user clicked execute from quote preview
-    if (quote && isWalletConnected) {
-      Alert.alert('Done', 'Transaction would be executed here');
       return;
     }
 
@@ -121,6 +124,11 @@ export function ExchangeCard() {
         toTokenSymbol: toToken.symbol,
       },
     });
+  };
+
+  const handleExecuteQuote = () => {
+    // This is called from the quote preview's execute button
+    Alert.alert('Done', 'Transaction would be executed here');
   };
 
   // Listen for token selection events from the mobile screen
@@ -146,15 +154,19 @@ export function ExchangeCard() {
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.settingsButton}
-              onPress={() => Alert.alert('Settings', 'Settings page coming soon')}>
-              <Settings size={24} color="#fff" />
-              <View style={styles.notificationDot} />
+              onPress={() => setShowSettings(true)}>
+              <Settings size={20} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.connectWalletHeaderButton}
-              onPress={handleConnectWallet}>
-              <Text style={styles.connectWalletHeaderText}>Connect wallet</Text>
-              <Wallet size={18} color="#fff" />
+              style={[
+                styles.connectWalletHeaderButton,
+                isWalletConnected && styles.connectedWalletButton,
+              ]}
+              onPress={isWalletConnected ? handleDisconnectWallet : handleConnectWallet}>
+              <Text style={styles.connectWalletHeaderText}>
+                {isWalletConnected ? 'Connected' : 'Connect'}
+              </Text>
+              <Wallet size={16} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
@@ -221,7 +233,7 @@ export function ExchangeCard() {
                   error={quoteError}
                   fromToken={fromToken}
                   toToken={toToken}
-                  onExecute={handleExchange}
+                  onExecute={handleExecuteQuote}
                 />
               )}
             </View>
@@ -250,6 +262,14 @@ export function ExchangeCard() {
 
         <Text style={styles.poweredBy}>Powered by LI.FI</Text>
       </View>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        visible={showSettings}
+        onClose={() => setShowSettings(false)}
+        slippage={slippage}
+        onSlippageChange={setSlippage}
+      />
     </ScrollView>
   );
 }
@@ -261,12 +281,17 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#0f0f0f',
-    margin: 16,
-    marginTop: 60,
-    borderRadius: 24,
-    padding: 24,
+    margin: 12,
+    marginTop: 50,
+    borderRadius: 20,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: 'rgba(91, 122, 255, 0.2)',
+    shadowColor: '#5b7aff',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
   header: {
     flexDirection: 'row',
@@ -275,23 +300,26 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '700',
     color: '#fff',
+    flex: 1,
   },
   headerActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
     alignItems: 'center',
+    flexShrink: 0,
   },
   settingsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1a1a1a',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(91, 122, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
+    borderWidth: 1,
+    borderColor: 'rgba(91, 122, 255, 0.3)',
   },
   notificationDot: {
     position: 'absolute',
@@ -305,16 +333,22 @@ const styles = StyleSheet.create({
   connectWalletHeaderButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#1a1a1a',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
+    gap: 6,
+    backgroundColor: 'rgba(91, 122, 255, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(91, 122, 255, 0.3)',
   },
   connectWalletHeaderText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#fff',
+  },
+  connectedWalletButton: {
+    backgroundColor: 'rgba(0, 255, 136, 0.15)',
+    borderColor: 'rgba(0, 255, 136, 0.4)',
   },
   exchangeSection: {
     gap: 8,
@@ -322,16 +356,18 @@ const styles = StyleSheet.create({
   selectors: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
+    flexWrap: 'nowrap',
   },
   swapButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#1a1a1a',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 28,
+    flexShrink: 0,
   },
   footer: {
     flexDirection: 'row',
@@ -345,6 +381,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#5b7aff',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   exchangeButton: {
     backgroundColor: '#5b7aff',

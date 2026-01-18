@@ -4,6 +4,7 @@
  */
 
 export const CHAIN_ID_TO_NETWORK: Record<number, string> = {
+    // EVM Chains
     1: 'Ethereum',
     10: 'Optimism',
     56: 'BSC',
@@ -17,8 +18,11 @@ export const CHAIN_ID_TO_NETWORK: Record<number, string> = {
     43114: 'Avalanche',
     59144: 'Linea',
     534352: 'Scroll',
-    // Solana
-    1151111081099710: 'Solana',
+    // Non-EVM Chains
+    1151111081099710: 'Solana', // Solana mainnet
+    501: 'Solana', // Alternative Solana ID
+    1337: 'Hyperliquid', // Hyperliquid chain ID
+    999: 'HyperEVM', // HyperEVM chain ID
     // Add more chains as needed
 };
 

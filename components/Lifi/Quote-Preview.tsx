@@ -60,6 +60,8 @@ export function QuotePreview({
 
     const executionTime = quote.estimate?.executionDuration || 0;
 
+    console.log('quote', quote.estimate);
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -67,7 +69,7 @@ export function QuotePreview({
                 <View style={styles.badge}>
                     <Zap size={12} color="#5b7aff" />
                     <Text style={styles.badgeText}>
-                        {quote.includedSteps?.length || 1} step{(quote.includedSteps?.length || 1) > 1 ? 's' : ''}
+                        {quote.includedSteps?.length || 1} transaction{(quote.includedSteps?.length || 1) > 1 ? 's' : ''}
                     </Text>
                 </View>
             </View>
@@ -100,7 +102,7 @@ export function QuotePreview({
                     {executionTime > 0 && (
                         <View style={styles.stat}>
                             <Clock size={12} color="#888" />
-                            <Text style={styles.statValue}>~{Math.ceil(executionTime / 60)}m</Text>
+                            <Text style={styles.statValue}>~{Math.ceil(executionTime / 60)}s</Text>
                         </View>
                     )}
 

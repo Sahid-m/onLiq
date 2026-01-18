@@ -20,19 +20,16 @@ import { notifyTokenSelection } from '@/lib/tokenSelectionEvent';
 
 // Define available networks
 const NETWORKS = [
-    { id: 'all', name: 'All networks', icon: '🌐' },
+    { id: 'all', name: 'All Networks', icon: '🌐' },
     { id: 'ethereum', name: 'Ethereum', icon: '⟠' },
-    { id: 'solana', name: 'Solana', icon: '◎' },
+    { id: 'polygon', name: 'Polygon', icon: '🟣' },
+    { id: 'optimism', name: 'Optimism', icon: '🔴' },
     { id: 'arbitrum', name: 'Arbitrum', icon: '🔷' },
     { id: 'base', name: 'Base', icon: '🔵' },
     { id: 'hyperliquid', name: 'Hyperliquid', icon: '💎' },
     { id: 'hyperevm', name: 'HyperEVM', icon: '⚡' },
-    { id: 'monad', name: 'Monad', icon: '🔮' },
     { id: 'bsc', name: 'BSC', icon: '🟡' },
-    { id: 'bitcoin', name: 'Bitcoin', icon: '₿' },
-    { id: 'sui', name: 'Sui', icon: '💧' },
-    { id: 'optimism', name: 'Optimism', icon: '🔴' },
-    { id: 'polygon', name: 'Polygon', icon: '🟣' },
+    { id: 'solana', name: 'Solana', icon: '◎' },
 ];
 
 export default function TokenSelectorScreen() {
