@@ -1,60 +1,89 @@
-# OnLiq
+# onLiq
 
-**One-tap onboarding into Hyperliquid. Trade instantly with Pear.**
+**onLiq** is a mobile-first React Native app that onboards crypto-native users and beginners into **Hyperliquid** in one flow, and lets them trade **themes, pairs, and directional bets** using the **Pear Execution API**.
 
-OnLiq is a mobile-first onboarding app built with **React Native + Expo** that bridges users from any chain into **HyperEVM** using **LI.FI**, then optionally auto-deposits funds into **Hyperliquid** so they can start trading immediately via **Pear**.
-
----
-
-## 🚀 What OnLiq Does
-
-- 📱 **Mobile-first onboarding** (iOS & Android)
-- 🌉 **Swap + bridge in one tap** using LI.FI routing
-- 📊 **Full execution visibility**: quote, ETA, steps, progress, final amount
-- ⚡ **Auto-deposit to Hyperliquid**
-- 🍐 **Instant trading via Pear** (pair & basket trades)
+It removes friction from wallet setup, bridging, and execution — users can go from email → funded account → live trades on mainnet in minutes.
 
 ---
 
-## 🧠 Why OnLiq
+## 🚀 What is onLiq?
 
-Onboarding into Hyperliquid today requires multiple steps:
-bridge → wait → switch network → deposit → trade.
+onLiq is an opinionated trading app designed around **ideas, not charts**.
 
-OnLiq compresses this into **one clean mobile flow**.
+Instead of forcing users to manually long/short single tokens, onLiq introduces:
+- **One-click onboarding to Hyperliquid**
+- **Theme-based investing (“investment pies”)**
+- **Pair & basket trading via Pear**
+- **Cross-chain bridging via LI.FI**
 
-No chain juggling. No manual deposits.
-
----
-
-## 🧩 Tech Stack
-
-- **Framework**: React Native + Expo
-- **Routing & Bridging**: LI.FI SDK / API
-- **Destination Chain**: HyperEVM
-- **Trading**: Hyperliquid + Pear Execution API
-- **Wallets**: WalletConnect / embedded wallets (EVM)
+Everything executes **real trades on mainnet**.
 
 ---
 
-## 🔁 User Flow
+## 🧠 Key Features
 
-1. User selects:
-   - Origin chain & token  
-   - Destination asset on HyperEVM (USDC, HYPE, etc.)
-2. OnLiq fetches the optimal route via LI.FI
-3. User confirms → swap + bridge executes
-4. Funds arrive on HyperEVM
-5. (Optional) Auto-deposit into Hyperliquid
-6. User trades instantly via Pear
+### 🔐 Smart Onboarding
+- Connect an existing Web3 wallet **or**
+- Sign up with email & password
+- Non-custodial wallet is created and securely managed for the user
+
+### 🌉 One-Click Bridging (LI.FI)
+- Bridge from **any chain, any token** to HyperEVM
+- Powered by **LI.FI routing**
+- Shows execution status, progress, and final amount
+- Optional auto-funding into Hyperliquid
+
+### 📊 Trade with Investment Pies (Pear)
+- Trade **ideas instead of tokens**
+- Long / Short with simple sliders and presets
+- Examples:
+  - Long ETH / Short BTC
+  - Long Hyperliquid ecosystem
+  - Directional thematic baskets
+- All executions use the **Pear Execution API**
+
+### 🔁 Universal Bridge Page
+- Dedicated bridge screen inside the app
+- Bridge tokens between chains at any time using LI.FI
+- Not just onboarding — reusable infrastructure
+
+### 💰 Mainnet, Real Trades
+- No testnet
+- No mocks
+- Real funds, real execution, real volume
 
 ---
 
-## ✨ Extra Features
+## 🧩 How It Uses the APIs
 
-- Reusable **“Deposit to Hyperliquid”** mobile component
-- Clear execution states and progress indicators
-- Failure handling, retries, and user guidance
-- Designed for reuse by other Hyperliquid mobile apps
+### Pear Execution API
+- Executes **pair trades**, **basket trades**, and **directional positions**
+- Abstracts complex execution into beginner-friendly actions
+- Enables trading narratives, ecosystems, and strategies
 
+### LI.FI
+- Handles cross-chain swaps and bridges in a single flow
+- Used for:
+  - Initial onboarding deposits
+  - In-app universal bridge experience
+- Improves reliability with route visibility and execution states
 
+---
+
+## 🏗️ Tech Stack
+
+- **React Native (Expo)**
+- **Hyperliquid / HyperEVM**
+- **Pear Protocol Execution API**
+- **LI.FI SDK / API**
+- **TypeScript**
+
+---
+
+## 🧪 Running Locally
+
+```bash
+git clone https://github.com/your-username/onliq
+cd onliq
+npm install
+npx expo start

@@ -12,17 +12,19 @@ export default function Index() {
         if (loading) return;
 
         const inOnboarding = segments[0] === 'onboarding';
+        const inTabs = segments[0] === '(tabs)';
 
-        if (!state.completed && !inOnboarding) {
-            // User hasn't completed onboarding, redirect to onboarding
-            setTimeout(() => {
-                router.replace('/onboarding/experience-level');
-            }, 100);
-        } else if (state.completed && !inOnboarding) {
-            // User has completed onboarding, redirect to main app
-            setTimeout(() => {
-                router.replace('/(tabs)/trade');
-            }, 100);
+        // If we're already in the right place, don't navigate
+        if (state.completed && inTabs) return;
+        if (!state.completed && inOnboarding) return;
+
+        // Navigate to the appropriate screen
+        if (!state.completed) {
+            // User hasn't completed onboarding
+            router.replace('/onboarding/experience-level');
+        } else {
+            // User has completed onboarding
+            router.replace('/(tabs)/trade');
         }
     }, [state.completed, loading, segments]);
 

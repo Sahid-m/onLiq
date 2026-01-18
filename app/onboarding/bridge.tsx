@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback, ActivityIndicator, Alert, Animated, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowRightLeft, DollarSign, ArrowLeft, ChevronRight } from 'lucide-react-native';
-import { useState, useEffect } from 'react';
+import { ArrowRightLeft, DollarSign, ArrowLeft, ChevronRight, Check } from 'lucide-react-native';
+import { useState, useEffect, useRef } from 'react';
 import { fetchRoutes } from '@/services/lifiService';
 import { Token } from '@/types/token';
 import { setTokenSelectionCallback, clearTokenSelectionCallback } from '@/lib/tokenSelectionEvent';
+import { useAccount, useProvider } from '@reown/appkit-react-native';
 
 export default function BridgeScreen() {
     const router = useRouter();
@@ -15,6 +16,14 @@ export default function BridgeScreen() {
     const [selectedRoute, setSelectedRoute] = useState<any | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { address, isConnected } = useAccount();
+    const { provider } = useProvider();
+
+    // Success animation state
+    const [showSuccess, setShowSuccess] = useState(false);
+    const successScale = useRef(new Animated.Value(0)).current;
+    const successOpacity = useRef(new Animated.Value(0)).current;
+    const checkScale = useRef(new Animated.Value(0)).current;
 
     // Hyperliquid chain ID and token addresses
     // Note: Hyperliquid might not be supported by LiFi yet
@@ -69,7 +78,7 @@ export default function BridgeScreen() {
             const amountInWei = (parseFloat(amount) * Math.pow(10, fromToken.decimals || 18)).toString();
 
             // Use placeholder addresses for now
-            const placeholderAddress = '0x63ef147426D1a29808F1A5a47077488673A9282f';
+
 
             console.log('Fetching routes with params:', {
                 fromChainId: fromToken.chainId,
@@ -78,15 +87,18 @@ export default function BridgeScreen() {
                 toChainId: HYPERLIQUID_CHAIN_ID,
                 toTokenAddress: toTokenAddress,
             });
-
+            if (!isConnected) {
+                setError('Please connect your wallet first');
+                return;
+            }
             const routesData = await fetchRoutes({
                 fromChainId: fromToken.chainId,
                 fromAmount: amountInWei,
                 fromTokenAddress: fromToken.address,
                 toChainId: HYPERLIQUID_CHAIN_ID,
                 toTokenAddress: toTokenAddress,
-                fromAddress: placeholderAddress,
-                toAddress: placeholderAddress,
+                fromAddress: address!,
+                toAddress: address!,
             });
 
             console.log('Routes response:', routesData);
@@ -105,15 +117,120 @@ export default function BridgeScreen() {
         }
     };
 
-    const handleBridge = () => {
+    const handleBridge = async () => {
         if (!selectedRoute) {
-            setError('Please select a route');
+            Alert.alert('Error', 'Please select a route first');
             return;
         }
 
-        Keyboard.dismiss();
-        // TODO: Execute the actual bridge transaction
-        router.push('/onboarding/tour');
+        if (!isConnected || !address) {
+            Alert.alert('Error', 'Please connect your wallet first');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            Keyboard.dismiss();
+
+            console.log('Selected route for bridge:', selectedRoute);
+
+            // Get the first step from the route
+            const step = selectedRoute.steps[0];
+
+            console.log('Fetching transaction data for step:', step);
+
+            // Fetch the transaction data from LiFi
+            const { fetchStepTransaction } = await import('@/services/lifiService');
+            const stepWithTransaction = await fetchStepTransaction(step);
+
+            console.log('Step with transaction data:', stepWithTransaction);
+
+            // The transactionRequest object contains the data needed to execute the transaction
+            const transactionData = stepWithTransaction.transactionRequest;
+
+            if (!transactionData) {
+                throw new Error('No transaction data returned from LiFi');
+            }
+
+            console.log('Transaction data to send to wallet:', transactionData);
+
+            // TODO: Send transactionData to wallet client for execution
+            // Example structure of transactionData:
+            // {
+            //   from: '0x...',
+            //   to: '0x...',
+            //   data: '0x...',
+            //   value: '0x...',
+            //   gasLimit: '0x...',
+            //   gasPrice: '0x...',
+            //   chainId: 1
+            // }
+
+            Alert.alert(
+                'Transaction Ready',
+                `Transaction data prepared!\n\nTo: ${transactionData.to}\nValue: ${transactionData.value}\n\nReady to execute via wallet.`,
+                [
+                    {
+                        text: 'Cancel',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Execute',
+                        onPress: async () => {
+                            try {
+                                // Execute transaction via wallet client
+                                await provider?.request({ method: 'eth_sendTransaction', params: [transactionData] });
+
+                                // Show success animation
+                                playSuccessAnimation();
+
+                                // Navigate to tour after animation
+                                setTimeout(() => {
+                                    router.push('/onboarding/tour');
+                                }, 2500);
+                            } catch (error) {
+                                console.error('Transaction failed:', error);
+                                Alert.alert('Transaction Failed', error instanceof Error ? error.message : 'Unknown error');
+                            }
+                        },
+                    },
+                ]
+            );
+        } catch (error) {
+            console.error('Error preparing bridge transaction:', error);
+            Alert.alert('Error', error instanceof Error ? error.message : 'Failed to prepare transaction');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const playSuccessAnimation = () => {
+        setShowSuccess(true);
+
+        // Animate the success overlay
+        Animated.parallel([
+            Animated.timing(successOpacity, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }),
+            Animated.spring(successScale, {
+                toValue: 1,
+                friction: 8,
+                tension: 40,
+                useNativeDriver: true,
+            }),
+        ]).start();
+
+        // Animate the checkmark with delay
+        setTimeout(() => {
+            Animated.spring(checkScale, {
+                toValue: 1,
+                friction: 5,
+                tension: 40,
+                useNativeDriver: true,
+            }).start();
+        }, 200);
     };
 
     const handleSkip = () => {
@@ -167,7 +284,7 @@ export default function BridgeScreen() {
                         <View style={styles.formContainer}>
                             {/* From Token Selection */}
                             <View style={styles.section}>
-                                <Text style={styles.label}>From</Text>
+                                <Text style={styles.label}>From Your Wallet Address : {address}</Text>
                                 <TouchableOpacity
                                     style={styles.tokenSelector}
                                     onPress={handleSelectFromToken}
@@ -244,6 +361,7 @@ export default function BridgeScreen() {
                                         const isSelected = selectedRoute === route;
                                         const estimatedTime = route.steps.reduce((sum: number, step: any) =>
                                             sum + (step.estimate?.executionDuration || 0), 0);
+                                        console.log('Route:', route);
 
                                         return (
                                             <TouchableOpacity
@@ -304,6 +422,39 @@ export default function BridgeScreen() {
                     </ScrollView>
                 </View>
             </TouchableWithoutFeedback>
+
+            {/* Success Animation Overlay */}
+            {showSuccess && (
+                <Animated.View
+                    style={[
+                        styles.successOverlay,
+                        {
+                            opacity: successOpacity,
+                        },
+                    ]}>
+                    <Animated.View
+                        style={[
+                            styles.successCard,
+                            {
+                                transform: [{ scale: successScale }],
+                            },
+                        ]}>
+                        <Animated.View
+                            style={[
+                                styles.checkCircle,
+                                {
+                                    transform: [{ scale: checkScale }],
+                                },
+                            ]}>
+                            <Check size={48} color="#fff" strokeWidth={3} />
+                        </Animated.View>
+                        <Text style={styles.successTitle}>Transaction Successful!</Text>
+                        <Text style={styles.successMessage}>
+                            Your bridge transaction has been executed successfully
+                        </Text>
+                    </Animated.View>
+                </Animated.View>
+            )}
         </KeyboardAvoidingView>
     );
 }
@@ -571,5 +722,55 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
         color: '#5b7aff',
+    },
+    successOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.95)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    successCard: {
+        backgroundColor: '#0f0f0f',
+        borderRadius: 24,
+        padding: 40,
+        alignItems: 'center',
+        gap: 20,
+        borderWidth: 2,
+        borderColor: '#00ff88',
+        shadowColor: '#00ff88',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        elevation: 10,
+    },
+    checkCircle: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: '#00ff88',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#00ff88',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.6,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    successTitle: {
+        fontSize: 28,
+        fontWeight: '700',
+        color: '#fff',
+        textAlign: 'center',
+    },
+    successMessage: {
+        fontSize: 16,
+        color: '#888',
+        textAlign: 'center',
+        lineHeight: 24,
     },
 });

@@ -30,7 +30,7 @@ export default function TourScreen() {
 
     const handleComplete = async () => {
         await completeOnboarding();
-        router.replace('/(tabs)');
+        router.replace('/(tabs)/trade');
     };
 
     return (

@@ -4,6 +4,7 @@ import { saveTokensToCache, getTokensFromCache } from '@/utils/tokenCache';
 
 const LIFI_API_BASE_URL = 'https://li.quest/v1';
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
+const LIFI_API_KEY = '3cd755d2-8d5c-4c3c-8fc3-35d540e46fb1.a65ea4ea-84fd-4058-a35d-91157fed33a4';
 
 /**
  * LiFi API token response structure
@@ -43,6 +44,7 @@ async function fetchWithTimeout(
             signal: controller.signal,
             headers: {
                 'Accept': 'application/json',
+                'x-lifi-api-key': LIFI_API_KEY,
             },
         });
         clearTimeout(timeoutId);
@@ -60,7 +62,7 @@ async function fetchWithTimeout(
  */
 function transformLiFiToken(lifiToken: LiFiToken): Token {
     return {
-        id: `${lifiToken.chainId}-${lifiToken.address}`,
+        id: `${lifiToken.chainId} -${lifiToken.address} `,
         name: lifiToken.name,
         symbol: lifiToken.symbol,
         network: getNetworkName(lifiToken.chainId),
@@ -216,6 +218,7 @@ export async function fetchRoutes(request: {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
+                'x-lifi-api-key': LIFI_API_KEY,
             },
             body: JSON.stringify(requestBody),
         });
@@ -273,9 +276,9 @@ export async function fetchQuote(request: {
         }
 
         const response = await fetch(`${LIFI_API_BASE_URL}/quote?${params.toString()}`, {
-            method: 'GET',
             headers: {
                 'Accept': 'application/json',
+                'x-lifi-api-key': LIFI_API_KEY,
             },
         });
 
@@ -293,5 +296,37 @@ export async function fetchQuote(request: {
         throw new Error(
             `Failed to fetch quote: ${error instanceof Error ? error.message : 'Unknown error'}`
         );
+    }
+}
+
+/**
+ * Fetch step transaction data from LiFi
+ * This gets the actual transaction data that can be sent to a wallet
+ */
+export async function fetchStepTransaction(step: any): Promise<any> {
+    try {
+        console.log('Fetching step transaction from LiFi API...', step);
+
+        const response = await fetch(`${LIFI_API_BASE_URL}/advanced/stepTransaction`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-lifi-api-key': LIFI_API_KEY,
+            },
+            body: JSON.stringify(step),
+        });
+
+        if (!response.ok) {
+            const message = await response.json();
+            throw new Error(`HTTP error! status: ${response.status} and message ${message.message}`);
+        }
+
+        const data = await response.json();
+        console.log('Step transaction response:', data);
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching step transaction from LiFi API:', error);
+        throw error;
     }
 }

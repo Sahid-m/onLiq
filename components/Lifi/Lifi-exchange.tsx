@@ -18,6 +18,7 @@ import { Token } from '@/types/token';
 import { setTokenSelectionCallback, clearTokenSelectionCallback } from '@/lib/tokenSelectionEvent';
 import { useRouter } from 'expo-router';
 import { fetchQuote } from '@/services/lifiService';
+import { useAppKit, useAccount, useProvider } from '@reown/appkit-react-native';
 
 export function ExchangeCard() {
   const { tokens, loading, error, refresh } = useTokens();
@@ -25,12 +26,16 @@ export function ExchangeCard() {
   const [fromToken, setFromToken] = useState<Token | null>(null);
   const [toToken, setToToken] = useState<Token | null>(null);
   const [amount, setAmount] = useState<string>('');
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [quote, setQuote] = useState<any>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [slippage, setSlippage] = useState(0.5); // Default 0.5%
+
+  // WalletConnect hooks
+  const { open } = useAppKit();
+  const { address, isConnected } = useAccount();
+  const { provider } = useProvider();
 
   // Initialize tokens when data is loaded
   useEffect(() => {
@@ -43,7 +48,7 @@ export function ExchangeCard() {
   // Fetch quote when all parameters are available
   useEffect(() => {
     const getQuote = async () => {
-      if (!fromToken || !toToken || !amount || parseFloat(amount) === 0 || !isWalletConnected) {
+      if (!fromToken || !toToken || !amount || parseFloat(amount) === 0 || !isConnected || !address) {
         setQuote(null);
         return;
       }
@@ -60,9 +65,8 @@ export function ExchangeCard() {
           fromToken: fromToken.address,
           toToken: toToken.address,
           fromAmount: amountInSmallestUnit,
-          // TODO: Add actual wallet addresses when wallet is connected
-          fromAddress: "0x63ef147426D1a29808F1A5a47077488673A9282f",
-          toAddress: "0x63ef147426D1a29808F1A5a47077488673A9282f",
+          fromAddress: address!,
+          toAddress: address!,
         });
 
         setQuote(quoteData);
@@ -78,17 +82,10 @@ export function ExchangeCard() {
     // Debounce quote fetching
     const timeoutId = setTimeout(getQuote, 500);
     return () => clearTimeout(timeoutId);
-  }, [fromToken, toToken, amount, isWalletConnected]);
+  }, [fromToken, toToken, amount, isConnected, address]);
 
   const handleConnectWallet = () => {
-    setIsWalletConnected(true);
-    Alert.alert('Wallet Connected', 'Your wallet has been connected successfully!');
-  };
-
-  const handleDisconnectWallet = () => {
-    setIsWalletConnected(false);
-    setQuote(null);
-    Alert.alert('Wallet Disconnected', 'Your wallet has been disconnected');
+    open();
   };
 
   const handleSwapTokens = () => {
@@ -127,6 +124,26 @@ export function ExchangeCard() {
   };
 
   const handleExecuteQuote = () => {
+    console.log('Executing quote', quote.transactionRequest);
+    Alert.alert(
+      'Transaction Ready',
+      `Transaction data prepared!\n\nTo: ${quote.transactionRequest.to}\nValue: ${quote.transactionRequest.value}\n\nReady to execute via wallet.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Execute',
+          onPress: async () => {
+            // TODO: Execute transaction via wallet client
+            await provider?.request({ method: 'eth_sendTransaction', params: [quote.transactionRequest] });
+            // For now, navigate to tour
+            router.push('/onboarding/tour');
+          },
+        },
+      ]
+    );
     // This is called from the quote preview's execute button
     Alert.alert('Done', 'Transaction would be executed here');
   };
@@ -160,11 +177,11 @@ export function ExchangeCard() {
             <TouchableOpacity
               style={[
                 styles.connectWalletHeaderButton,
-                isWalletConnected && styles.connectedWalletButton,
+                isConnected && styles.connectedWalletButton,
               ]}
-              onPress={isWalletConnected ? handleDisconnectWallet : handleConnectWallet}>
+              onPress={handleConnectWallet}>
               <Text style={styles.connectWalletHeaderText}>
-                {isWalletConnected ? 'Connected' : 'Connect'}
+                {isConnected ? `${address?.slice(0, 6)}...${address?.slice(-4)}` : 'Connect'}
               </Text>
               <Wallet size={16} color="#fff" />
             </TouchableOpacity>
@@ -226,7 +243,7 @@ export function ExchangeCard() {
               />
 
               {/* Quote Preview */}
-              {isWalletConnected && fromToken && toToken && (
+              {isConnected && fromToken && toToken && (
                 <QuotePreview
                   quote={quote}
                   loading={quoteLoading}
@@ -242,12 +259,12 @@ export function ExchangeCard() {
               <TouchableOpacity
                 style={[
                   styles.connectButton,
-                  isWalletConnected && styles.exchangeButton,
+                  isConnected && styles.exchangeButton,
                 ]}
-                onPress={isWalletConnected ? handleExchange : handleConnectWallet}
+                onPress={isConnected ? handleExchange : handleConnectWallet}
                 activeOpacity={0.8}>
                 <Text style={styles.connectButtonText}>
-                  {isWalletConnected ? 'View All Routes' : 'Connect wallet'}
+                  {isConnected ? 'View All Routes' : 'Connect wallet'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity

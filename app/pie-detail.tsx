@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Info } from 'lucide-react-native';
 import { useState } from 'react';
 import { Svg, Circle } from 'react-native-svg';
 import Slider from '@react-native-community/slider';
+import { createPosition, CreatePositionRequest } from '@/services/pearProtocolService';
 
 interface PieToken {
     symbol: string;
@@ -68,7 +69,11 @@ export default function PieDetailScreen() {
     const [allocations, setAllocations] = useState<PieToken[]>(
         pieData?.tokens || []
     );
-    const [investmentAmount, setInvestmentAmount] = useState('100');
+    const [investmentAmount, setInvestmentAmount] = useState('22'); // Hardcoded to $22
+    const [isCreatingPosition, setIsCreatingPosition] = useState(false);
+
+    // Hardcoded bearer token - same as positions screen
+    const PEAR_BEARER_TOKEN = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIweDYzZWYxNDc0MjZEMWEyOTgwOEYxQTVhNDcwNzc0ODg2NzNBOTI4MmYiLCJhZGRyZXNzIjoiMHg2M2VmMTQ3NDI2RDFhMjk4MDhGMUE1YTQ3MDc3NDg4NjczQTkyODJmIiwiY2xpZW50SWQiOiJQRUFSUFJPVE9DT0xVSSIsImFwcElkIjoiZWlwNzEyIiwiaWF0IjoxNzY4Njk4ODkwLCJleHAiOjE3NzEyOTA4OTAsImp0aSI6ImZkMzRmZThiLTQxNjItNDMxMy1hOWI1LWY2OWIzODcxNTVjYSIsImF1ZCI6InBlYXItcHJvdG9jb2wtY2xpZW50IiwiaXNzIjoicGVhci1wcm90b2NvbC1hcGkifQ.oMGVKgbI-6pbML0_Oy9XBVNsjPgCtjMt4xETVU8XL3-i6lYVnQL_qdPU1QdnAhr1ZoZCsvWbyblqJafc-cWxyLjr6-1eJINCOTWJekvOXbDbCrF-tUZQnET3-kS_f5WrABimfAEeL8gWizGVsM_pAV_BK2UR9_IFczJmYO8DK3KO0WxLx8ekGHXBf8-pNAku-xXfJQclT0Uz3tlTv25jAhm20xi5NRSelU1AY1QTBPnbo1H8--S_Ak7o7PiIBvPi2UDRjHjJXzCatxbqlraRmZ5SbEN-xBoCuTDWqvAAK1OG6a4pSRiwhhz0s_puchY9ckuHTxyl1OEJxo6rYD4JOA';
 
     if (!pieData) {
         return (
@@ -87,14 +92,75 @@ export default function PieDetailScreen() {
     const totalAllocation = allocations.reduce((sum, token) => sum + token.allocation, 0);
     const isValid = Math.abs(totalAllocation - 100) < 0.1;
 
-    const handleInvest = () => {
+    const handleInvest = async () => {
         if (!isValid) {
-            alert('Allocations must sum to 100%');
+            Alert.alert('Invalid Allocation', 'Allocations must sum to 100%');
             return;
         }
-        // TODO: Implement investment logic
-        alert(`Investing $${investmentAmount} in ${pieData.name}`);
-        router.back();
+
+        const amount = parseFloat(investmentAmount);
+        if (isNaN(amount) || amount < pieData.minInvestment) {
+            Alert.alert('Invalid Amount', `Minimum investment is $${pieData.minInvestment}`);
+            return;
+        }
+
+        try {
+            setIsCreatingPosition(true);
+
+            // Separate tokens into long and short based on direction
+            const longAssets = allocations
+                .filter(t => t.direction === 'long')
+                .map(t => ({
+                    asset: t.symbol,
+                    weight: t.allocation / 100, // Convert percentage to decimal
+                }));
+
+            const shortAssets = allocations
+                .filter(t => t.direction === 'short')
+                .map(t => ({
+                    asset: t.symbol,
+                    weight: t.allocation / 100,
+                }));
+
+            // Create position request
+            const positionRequest: CreatePositionRequest = {
+                slippage: 0.01, // 1% slippage
+                executionType: 'MARKET',
+                leverage: 5, // Hardcoded leverage of 5x
+                usdValue: amount,
+                longAssets: longAssets.length > 0 ? longAssets : undefined,
+                shortAssets: shortAssets.length > 0 ? shortAssets : undefined,
+                stopLoss: null,
+                takeProfit: null,
+            };
+
+            console.log('Creating position:', positionRequest);
+
+            const result = await createPosition(PEAR_BEARER_TOKEN, positionRequest);
+
+            console.log('Position created:', result);
+
+            Alert.alert(
+                'Success!',
+                `Position created successfully!\n\nOrder ID: ${result.orderId}\nInvested: $${amount} with ${5}x leverage`,
+                [
+                    {
+                        text: 'View Positions',
+                        onPress: () => {
+                            router.replace('/(tabs)/positions');
+                        },
+                    },
+                ]
+            );
+        } catch (error) {
+            console.error('Error creating position:', error);
+            Alert.alert(
+                'Error',
+                error instanceof Error ? error.message : 'Failed to create position. Please try again.'
+            );
+        } finally {
+            setIsCreatingPosition(false);
+        }
     };
 
     return (
@@ -188,13 +254,20 @@ export default function PieDetailScreen() {
 
                 {/* Invest Button */}
                 <TouchableOpacity
-                    style={[styles.investButton, !isValid && styles.investButtonDisabled]}
+                    style={[styles.investButton, (!isValid || isCreatingPosition) && styles.investButtonDisabled]}
                     onPress={handleInvest}
-                    disabled={!isValid}
+                    disabled={!isValid || isCreatingPosition}
                     activeOpacity={0.8}>
-                    <Text style={styles.investButtonText}>
-                        Invest ${investmentAmount}
-                    </Text>
+                    {isCreatingPosition ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator color="#fff" />
+                            <Text style={styles.investButtonText}>Creating Position...</Text>
+                        </View>
+                    ) : (
+                        <Text style={styles.investButtonText}>
+                            Invest ${investmentAmount} (5x Leverage)
+                        </Text>
+                    )}
                 </TouchableOpacity>
             </ScrollView>
         </View>
@@ -389,6 +462,11 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         color: '#fff',
+    },
+    loadingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
     },
     errorText: {
         fontSize: 16,

@@ -3,26 +3,38 @@ import { useRouter } from 'expo-router';
 import { Wallet, Check, ArrowLeft } from 'lucide-react-native';
 import { useState } from 'react';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useAccount, useAppKit } from '@reown/appkit-react-native';
 
 export default function ConnectWalletScreen() {
     const router = useRouter();
     const { setAuthMethod, setWalletAddress } = useOnboarding();
     const [connecting, setConnecting] = useState(false);
+    const { open, disconnect } = useAppKit();
+    const { address, isConnected, chainId } = useAccount();
 
     const handleConnectWallet = async () => {
         setConnecting(true);
 
+        await open();
+
+        if (isConnected) {
+            setWalletAddress(address!);
+        }
+        setAuthMethod('wallet');
+        setConnecting(false);
+        router.push('/onboarding/bridge');
+
         // TODO: Implement actual wallet connection
-        // For now, using placeholder
-        setTimeout(async () => {
-            const mockAddress = '0x' + Math.random().toString(16).substr(2, 40);
+        // // For now, using placeholder
+        // setTimeout(async () => {
+        //     const mockAddress = '0x' + Math.random().toString(16).substr(2, 40);
 
-            await setAuthMethod('wallet');
-            await setWalletAddress(mockAddress);
+        //     await setAuthMethod('wallet');
+        //     await setWalletAddress(mockAddress);
 
-            setConnecting(false);
-            router.push('/onboarding/bridge');
-        }, 1500);
+        //     setConnecting(false);
+        //     router.push('/onboarding/bridge');
+        // }, 1500);
     };
 
     return (
@@ -55,8 +67,8 @@ export default function ConnectWalletScreen() {
                                 <Text style={styles.walletIconText}>H</Text>
                             </View>
                             <View>
-                                <Text style={styles.walletName}>Hyperliquid Wallet</Text>
-                                <Text style={styles.walletDescription}>Native Hyperliquid wallet</Text>
+                                <Text style={styles.walletName}>Wallet Connect</Text>
+                                <Text style={styles.walletDescription}>Connect to your wallet</Text>
                             </View>
                         </View>
                         {connecting ? (
