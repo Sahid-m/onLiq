@@ -85,7 +85,7 @@ DEMO VIDEO : https://youtube.com/shorts/aWw1oms4U2o?si=t0_tM-0mxrku1-Y1
 ## 🧪 Running Locally
 
 ```bash
-git clone https://github.com/your-username/onliq
+git clone https://github.com/sahid-m/onliq
 cd onliq
 npm install
 npx expo start
