@@ -18,6 +18,8 @@ Instead of forcing users to manually long/short single tokens, onLiq introduces:
 
 Everything executes **real trades on mainnet**.
 
+DEMO VIDEO : https://youtube.com/shorts/aWw1oms4U2o?si=t0_tM-0mxrku1-Y1
+
 ---
 
 ## 🧠 Key Features
