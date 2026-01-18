@@ -42,12 +42,18 @@ export default function RoutesScreen() {
             setLoading(true);
             setError(null);
 
+            // Use Arbitrum as destination since Hyperliquid might not be supported by LiFi
+            const ARBITRUM_CHAIN_ID = 42161;
+            const USDC_ARBITRUM = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
+
             const response = await fetchRoutes({
                 fromChainId: parseInt(params.fromChainId),
                 fromAmount: params.fromAmount,
                 fromTokenAddress: params.fromTokenAddress,
-                toChainId: parseInt(params.toChainId),
-                toTokenAddress: params.toTokenAddress,
+                toChainId: ARBITRUM_CHAIN_ID, // Always use Arbitrum
+                toTokenAddress: USDC_ARBITRUM, // Always use USDC on Arbitrum
+                fromAddress: "0x63ef147426D1a29808F1A5a47077488673A9282f",
+                toAddress: "0x63ef147426D1a29808F1A5a47077488673A9282f"
             });
 
             setRoutes(response.routes || []);

@@ -189,8 +189,8 @@ export async function fetchRoutes(request: {
     fromTokenAddress: string;
     toChainId: number;
     toTokenAddress: string;
-    fromAddress?: string;
-    toAddress?: string;
+    fromAddress: string;
+    toAddress: string;
 }): Promise<any> {
     try {
         console.log('Fetching routes from LiFi API...', request);
@@ -221,7 +221,8 @@ export async function fetchRoutes(request: {
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const message = await response.json();
+            throw new Error(`HTTP error! status: ${response.status} and message ${message.message}`);
         }
 
         const data = await response.json();
@@ -279,7 +280,8 @@ export async function fetchQuote(request: {
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const message = await response.json();
+            throw new Error(`HTTP error! status: ${response.status} and message ${message.message}`);
         }
 
         const data = await response.json();

@@ -17,12 +17,19 @@ export function AmountInput({ token, amount, onChangeAmount }: AmountInputProps)
   const tokenValue = parseFloat(amount || '0') / token.priceUSD;
 
   const handleChangeText = (text: string) => {
+    // Allow empty string for deletion
+    if (text === '') {
+      onChangeAmount('');
+      return;
+    }
+
     const filtered = text.replace(/[^0-9.]/g, '');
     if (filtered.split('.').length > 2) return;
 
     if (inputMode === 'usd') {
       // Convert USD to token amount
-      const tokenAmount = parseFloat(filtered || '0') / token.priceUSD;
+      const usdAmount = parseFloat(filtered || '0');
+      const tokenAmount = usdAmount / token.priceUSD;
       onChangeAmount(tokenAmount.toString());
     } else {
       onChangeAmount(filtered);
@@ -30,7 +37,7 @@ export function AmountInput({ token, amount, onChangeAmount }: AmountInputProps)
   };
 
   const displayValue = inputMode === 'usd'
-    ? usdValue.toFixed(2)
+    ? (amount === '' ? '' : usdValue.toFixed(2))
     : amount;
 
   const toggleInputMode = () => {
